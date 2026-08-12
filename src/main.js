@@ -185,7 +185,7 @@ const markerControls = new THREEx.ArMarkerControls(
     type: "nft",
     
     descriptorsUrl:
-      "sel-webar-GITHUB/public/markers/presunto_100_alentejano",
+      "sel-webar-GITHUB/markers/presunto_100_alentejano",
 
     changeMatrixMode:
       "modelViewMatrix",
