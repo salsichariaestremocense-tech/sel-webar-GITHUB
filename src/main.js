@@ -120,6 +120,35 @@ markerRoot.visible = false;
 scene.add(markerRoot);
 
 // ======================================================
+// TESTE - BOLA VERMELHA
+// ======================================================
+
+/*
+const testBallGeometry = new THREE.SphereGeometry(
+  50,
+  32,
+  32
+);
+
+const testBallMaterial = new THREE.MeshBasicMaterial({
+  color: 0xff0000
+});
+
+const testBall = new THREE.Mesh(
+  testBallGeometry,
+  testBallMaterial
+);
+
+testBall.position.set(
+  100,
+  0,
+  -100
+);
+
+markerRoot.add(testBall);
+*/
+
+// ======================================================
 // ESTABILIZAÇÃO EXTRA DO TRACKING
 // ======================================================
 
@@ -523,9 +552,9 @@ loader.load(
 
     // Centro do NFT
     pivotPresunto.position.set(
+      100,
       0,
-      0,
-      0
+      -100
     );
 
     // ==================================================
