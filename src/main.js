@@ -138,8 +138,8 @@ let trackingInitialized = false;
 // 0.15 = mais estável
 // 0.20 = muito estável
 
-const POSITION_SMOOTHING = 0.12;
-const ROTATION_SMOOTHING = 0.12;
+const POSITION_SMOOTHING = 1.0;
+const ROTATION_SMOOTHING = 1.0;
 
 // ======================================================
 // NFT / IMAGE TRACKING
@@ -191,13 +191,16 @@ const markerControls = new THREEx.ArMarkerControls(
       "modelViewMatrix",
 
     smooth: true,
-    smoothCount: 20,
+    smoothCount: 30,
     smoothTolerance: 0.02,
-    smoothThreshold: 8,
+    smoothThreshold: 10,
+
   }
 );
 
 console.log("🎯 NFT Marker configurado");
+
+let markerLostTimeout = null;
 
 // ======================================================
 // EVENTO - MARKER ENCONTRADO
@@ -206,7 +209,14 @@ console.log("🎯 NFT Marker configurado");
 markerControls.addEventListener(
   "markerFound",
   () => {
+
     console.log("🔥 MARKER ENCONTRADO");
+
+    // Cancelar eventual desaparecimento pendente
+    if (markerLostTimeout !== null) {
+      clearTimeout(markerLostTimeout);
+      markerLostTimeout = null;
+    }
 
     markerRoot.visible = true;
   }
@@ -219,11 +229,24 @@ markerControls.addEventListener(
 markerControls.addEventListener(
   "markerLost",
   () => {
-    console.log("❌ MARKER PERDIDO");
 
-    markerRoot.visible = false;
+    console.log("⚠️ MARKER PERDIDO - A AGUARDAR...");
 
-    trackingInitialized = false;
+    // NÃO esconder imediatamente
+
+    markerLostTimeout = setTimeout(() => {
+
+      console.log(
+        "❌ MARKER PERDIDO DEFINITIVAMENTE"
+      );
+
+      markerRoot.visible = false;
+
+      trackingInitialized = false;
+
+      markerLostTimeout = null;
+
+    }, 500);
   }
 );
 
@@ -278,45 +301,99 @@ loader.load(
 
       if (object.isMesh) {
 
+        console.log(
+          "🔎 MESH:",
+          object.name
+        );
+
         meshCount++;
 
         object.visible = true;
 
         object.frustumCulled = false;
 
-        // Garantir que o modelo é visível
-        // independentemente da orientação
-
         if (object.material) {
 
-          if (
-            Array.isArray(
-              object.material
-            )
-          ) {
+          const materials = Array.isArray(object.material)
+            ? object.material
+            : [object.material];
 
-            object.material.forEach(
-              (material) => {
+          materials.forEach((material) => {
 
-                material.side =
-                  THREE.DoubleSide;
+            // ==================================================
+            // DEBUG DO MATERIAL ORIGINAL
+            // ==================================================
 
-                material.needsUpdate =
-                  true;
+            console.log("🎨 MATERIAL ORIGINAL:", {
+              name: material.name,
+              type: material.type,
+              transparent: material.transparent,
+              opacity: material.opacity,
+              alphaTest: material.alphaTest,
+              depthWrite: material.depthWrite,
+              depthTest: material.depthTest,
+            });
 
-              }
-            );
+            // ==================================================
+            // FACES
+            // ==================================================
 
-          } else {
+            material.side = THREE.DoubleSide;
 
-            object.material.side =
-              THREE.DoubleSide;
+            // ==================================================
+            // PRESERVAR TRANSPARÊNCIA ORIGINAL
+            // ==================================================
 
-            object.material.needsUpdate =
-              true;
+            if (material.transparent === true) {
 
-          }
+              // ------------------------------------------------
+              // MATERIAL QUE DEVE SER TRANSPARENTE
+              // ------------------------------------------------
+
+              console.log(
+                "🟡 MATERIAL TRANSPARENTE PRESERVADO:",
+                material.name
+              );
+
+              // Mantemos a transparência original
+              material.transparent = true;
+
+              // Mantemos a opacidade que veio do GLB
+              // NÃO fazemos material.opacity = 1
+
+              // Permite que o objeto continue a ser
+              // corretamente testado contra outros objetos
+              material.depthTest = true;
+
+              // Para materiais transparentes evitamos que
+              // escrevam no depth buffer e criem artefactos
+              material.depthWrite = false;
+
+            } else {
+
+              // ------------------------------------------------
+              // MATERIAL QUE DEVE SER OPACO
+              // ------------------------------------------------
+
+              console.log(
+                "🟢 MATERIAL OPACO FORÇADO:",
+                material.name
+              );
+
+              material.transparent = false;
+              material.opacity = 1.0;
+
+              material.depthTest = true;
+              material.depthWrite = true;
+
+            }
+
+            material.needsUpdate = true;
+
+          });
+
         }
+
       }
     });
 
@@ -344,6 +421,15 @@ loader.load(
     box.getCenter(center);
 
     console.log(
+      "🎯 Centro calculado:",
+      center.x,
+      center.y,
+      center.z
+    );
+
+
+
+    console.log(
       "📦 Tamanho original:",
       size
     );
@@ -366,11 +452,10 @@ loader.load(
     // PIVOT
     // ==================================================
 
-    const pivotPresunto =
-      new THREE.Group();
+    const pivotPresunto = new THREE.Group();
 
     // ==================================================
-    // CENTRAR MODELO
+    // CENTRAR MODELO NO NFT
     // ==================================================
 
     presunto.position.set(
@@ -379,26 +464,29 @@ loader.load(
       -center.z
     );
 
+    console.log(
+      "🎯 Modelo centrado no NFT:",
+      presunto.position
+    );
+
     // ==================================================
     // ESCALA
     // ==================================================
 
-    const maxDimension =
-      Math.max(
-        size.x,
-        size.y,
-        size.z
-      );
+    const maxDimension = Math.max(
+      size.x,
+      size.y,
+      size.z
+    );
 
     // ==================================================
     // TAMANHO DO MODELO NO AR
     // ==================================================
 
-    const targetSize = 50.0;
+    const targetSize = 200.0;
 
     const modelScale =
-      targetSize /
-      maxDimension;
+      targetSize / maxDimension;
 
     presunto.scale.set(
       modelScale,
@@ -416,9 +504,9 @@ loader.load(
     // ==================================================
 
     presunto.rotation.set(
-      40,
-      40,
-      -40
+      0,
+      0,
+      0
     );
 
     // ==================================================
@@ -433,14 +521,11 @@ loader.load(
     // POSIÇÃO DO PIVOT
     // ==================================================
 
-    // Mantemos exatamente a posição
-    // que encontraste como correta
-    // relativamente ao NFT.
-
+    // Centro do NFT
     pivotPresunto.position.set(
-      40,
-      40,
-      -40
+      0,
+      0,
+      0
     );
 
     // ==================================================
@@ -464,58 +549,40 @@ loader.load(
     );
 
     // ==================================================
-    // PLANO INVISÍVEL
+    // COLOCAR O PRESUNTO NO PLANO
     // ==================================================
 
-    // O "chão" imaginário encontra-se em Y = 0.
+    // O modelo já foi centrado anteriormente.
+    // Agora calculamos onde fica a parte inferior
+    // depois da escala e rotação.
 
-    // ==================================================
-    // ALTURA DO PRESUNTO
-    // ==================================================
-
-    const groundOffset = 0;
-
-    presunto.position.y +=
-      groundOffset;
-
-    presunto.updateMatrixWorld(
-      true
-    );
-
-    console.log(
-      "📐 Ground offset:",
-      groundOffset
-    );
-
-    console.log(
-      "📍 Posição final do presunto:",
-      presunto.position
-    );
-
-    // ==================================================
-    // VERIFICAÇÃO DO PLANO
-    // ==================================================
+    presunto.updateMatrixWorld(true);
 
     const finalGroundBox =
       new THREE.Box3().setFromObject(
         presunto
       );
 
-    console.log(
-      "🟢 Presunto assente no plano invisível"
-    );
+    // Ponto inferior atual do modelo
+    const currentBottom =
+      finalGroundBox.min.y;
 
-    console.log(
-      "📐 Novo ponto inferior:",
-      finalGroundBox.min.y
-    );
+    // Levantar o modelo até Y = 0
+    presunto.position.y -= currentBottom;
+
+    presunto.updateMatrixWorld(true);
+
+    // Verificação final
+    const correctedGroundBox =
+      new THREE.Box3().setFromObject(
+        presunto
+      );
 
     // ==================================================
     // VISIBILIDADE
     // ==================================================
 
     pivotPresunto.visible = true;
-
     presunto.visible = true;
 
     // ==================================================
