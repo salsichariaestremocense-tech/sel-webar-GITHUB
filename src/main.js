@@ -15,6 +15,12 @@ console.log("AR.js carregado =", !!THREEx);
 console.log("🔴 TESTE 1 ATIVO — SEM GLB");
 
 // ======================================================
+// DEBUG GLOBAL
+// ======================================================
+
+let debugPanel = null;
+
+// ======================================================
 // RENDERER
 // ======================================================
 
@@ -25,17 +31,31 @@ const renderer = new THREE.WebGLRenderer({
 });
 
 renderer.setPixelRatio(window.devicePixelRatio);
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setSize(
+  window.innerWidth,
+  window.innerHeight
+);
+
 renderer.setClearColor(0x000000, 0);
 
-renderer.domElement.style.position = "absolute";
+// ======================================================
+// CSS DO RENDERER
+// ======================================================
+
+renderer.domElement.style.position = "fixed";
 renderer.domElement.style.top = "0";
 renderer.domElement.style.left = "0";
-renderer.domElement.style.width = "100%";
-renderer.domElement.style.height = "100%";
+
+renderer.domElement.style.width = "100vw";
+renderer.domElement.style.height = "100vh";
+
 renderer.domElement.style.zIndex = "1";
 
-document.body.appendChild(renderer.domElement);
+renderer.domElement.style.pointerEvents = "none";
+
+document.body.appendChild(
+  renderer.domElement
+);
 
 // ======================================================
 // CENA
@@ -52,225 +72,246 @@ const camera = new THREE.Camera();
 scene.add(camera);
 
 // ======================================================
-// ILUMINAÇÃO
+// PAINEL DEBUG
 // ======================================================
 
-// Não precisamos de iluminação neste teste,
-// porque a bola usa MeshBasicMaterial.
+function createDebugPanel() {
+
+  // Se já existir, não criar outro
+  if (document.getElementById("device-debug")) {
+    debugPanel =
+      document.getElementById("device-debug");
+
+    return;
+  }
+
+  debugPanel =
+    document.createElement("div");
+
+  debugPanel.id =
+    "device-debug";
+
+  // ----------------------------------------------------
+  // POSIÇÃO
+  // ----------------------------------------------------
+
+  debugPanel.style.position = "fixed";
+
+  debugPanel.style.top = "10px";
+  debugPanel.style.left = "10px";
+
+  debugPanel.style.right = "10px";
+
+  // ----------------------------------------------------
+  // APARÊNCIA
+  // ----------------------------------------------------
+
+  debugPanel.style.zIndex = "2147483647";
+
+  debugPanel.style.background =
+    "rgba(0, 0, 0, 0.88)";
+
+  debugPanel.style.color =
+    "#00ff00";
+
+  debugPanel.style.padding =
+    "12px";
+
+  debugPanel.style.borderRadius =
+    "10px";
+
+  debugPanel.style.border =
+    "1px solid rgba(0,255,0,0.4)";
+
+  debugPanel.style.boxShadow =
+    "0 4px 20px rgba(0,0,0,0.5)";
+
+  // ----------------------------------------------------
+  // TEXTO
+  // ----------------------------------------------------
+
+  debugPanel.style.fontFamily =
+    "monospace";
+
+  debugPanel.style.fontSize =
+    "12px";
+
+  debugPanel.style.lineHeight =
+    "1.45";
+
+  debugPanel.style.maxHeight =
+    "90vh";
+
+  debugPanel.style.overflow =
+    "auto";
+
+  // ----------------------------------------------------
+  // NÃO INTERFERIR COM O AR
+  // ----------------------------------------------------
+
+  debugPanel.style.pointerEvents =
+    "none";
+
+  // ----------------------------------------------------
+  // CONTEÚDO INICIAL
+  // ----------------------------------------------------
+
+  debugPanel.innerHTML = `
+    <b>🔧 DEBUG WebAR</b><br>
+    ─────────────────────────────<br>
+    ⏳ A iniciar diagnóstico...
+  `;
+
+  document.body.appendChild(
+    debugPanel
+  );
+
+  console.log(
+    "🔧 Painel DEBUG criado"
+  );
+}
+
+// ======================================================
+// CRIAR PAINEL IMEDIATAMENTE
+// ======================================================
+
+createDebugPanel();
 
 // ======================================================
 // AR.JS - CÂMARA
 // ======================================================
 
-const arToolkitSource = new THREEx.ArToolkitSource({
-  sourceType: "webcam",
-  sourceWidth: 640,
-  sourceHeight: 480,
-});
+const arToolkitSource =
+  new THREEx.ArToolkitSource({
 
-arToolkitSource.init(() => {
+    sourceType: "webcam",
 
-  console.log("📷 Câmara AR.js inicializada");
+    sourceWidth: 640,
 
-  setTimeout(() => {
+    sourceHeight: 480,
 
-    onResize();
-
-    showDeviceInfo();
-
-    setTimeout(() => {
-      showRenderInfo();
-    }, 500);
-
-    const video = arToolkitSource.domElement;
-
-    console.log("========== INFO CÂMARA ==========");
-
-    console.log(
-      "📐 VideoWidth:",
-      video.videoWidth
-    );
-
-    console.log(
-      "📐 VideoHeight:",
-      video.videoHeight
-    );
-
-    console.log(
-      "📱 WindowWidth:",
-      window.innerWidth
-    );
-
-    console.log(
-      "📱 WindowHeight:",
-      window.innerHeight
-    );
-
-    console.log(
-      "📊 DevicePixelRatio:",
-      window.devicePixelRatio
-    );
-
-    console.log(
-      "📐 Aspect Ratio Câmara:",
-      video.videoWidth / video.videoHeight
-    );
-
-    console.log(
-      "📐 Aspect Ratio Ecrã:",
-      window.innerWidth / window.innerHeight
-    );
-
-    console.log(
-      "================================");
-
-  }, 1000);
-});
+  });
 
 // ======================================================
-// DEBUG - INFORMAÇÃO DO DISPOSITIVO
+// AR.JS - CONTEXTO
 // ======================================================
 
-function showDeviceInfo() {
+const arToolkitContext =
+  new THREEx.ArToolkitContext(
 
-  const video = arToolkitSource.domElement;
+    {
+      detectionMode: "mono",
 
-  // Remover painel anterior, caso exista
-  const oldInfo = document.getElementById(
-    "device-debug"
+      canvasWidth: 640,
+
+      canvasHeight: 480,
+    },
+
+    {
+      sourceWidth: 640,
+
+      sourceHeight: 480,
+    }
+
   );
 
-  if (oldInfo) {
-    oldInfo.remove();
+// ======================================================
+// DEBUG — ATUALIZAR PAINEL
+// ======================================================
+
+function updateDebugPanel() {
+
+  if (!debugPanel) {
+    return;
   }
 
-  const info = document.createElement("div");
+  const video =
+    arToolkitSource.domElement;
 
-  info.id = "device-debug";
-
-  info.style.position = "fixed";
-  info.style.top = "10px";
-  info.style.left = "10px";
-
-  info.style.zIndex = "99999";
-
-  info.style.background =
-    "rgba(0,0,0,0.80)";
-
-  info.style.color =
-    "#00ff00";
-
-  info.style.padding =
-    "12px";
-
-  info.style.borderRadius =
-    "8px";
-
-  info.style.fontFamily =
-    "monospace";
-
-  info.style.fontSize =
-    "13px";
-
-  info.style.lineHeight =
-    "1.5";
-
-  info.style.pointerEvents =
-    "none";
+  // ====================================================
+  // CÂMARA
+  // ====================================================
 
   const cameraWidth =
-    video.videoWidth;
+    video?.videoWidth || 0;
 
   const cameraHeight =
-    video.videoHeight;
-
-  const screenWidth =
-    window.innerWidth;
-
-  const screenHeight =
-    window.innerHeight;
+    video?.videoHeight || 0;
 
   const cameraAspect =
     cameraHeight
       ? cameraWidth / cameraHeight
       : 0;
 
-  const screenAspect =
-    screenHeight
-      ? screenWidth / screenHeight
+  // ====================================================
+  // WINDOW
+  // ====================================================
+
+  const windowWidth =
+    window.innerWidth;
+
+  const windowHeight =
+    window.innerHeight;
+
+  const windowAspect =
+    windowHeight
+      ? windowWidth / windowHeight
       : 0;
 
+  // ====================================================
+  // PIXEL RATIO
+  // ====================================================
+
   const pixelRatio =
-    window.devicePixelRatio;
+    window.devicePixelRatio || 1;
 
-  info.innerHTML = `
-    <b>🔧 DEBUG WebAR</b><br>
-    ─────────────────────<br>
+  // ====================================================
+  // SCREEN
+  // ====================================================
 
-    📷 CÂMARA<br>
-    Resolução: ${cameraWidth} × ${cameraHeight}<br>
-    Aspect: ${cameraAspect.toFixed(3)}<br><br>
+  const screenWidth =
+    window.screen.width;
 
-    📱 ECRÃ<br>
-    Window: ${screenWidth} × ${screenHeight}<br>
-    Aspect: ${screenAspect.toFixed(3)}<br><br>
+  const screenHeight =
+    window.screen.height;
 
-    🔍 PIXEL RATIO<br>
-    ${pixelRatio}<br><br>
+  // ====================================================
+  // ORIENTAÇÃO
+  // ====================================================
 
-    🖥️ SCREEN<br>
-    ${window.screen.width} × ${window.screen.height}<br><br>
-
-    🔄 ORIENTAÇÃO<br>
-    ${window.innerWidth > window.innerHeight
+  const orientation =
+    windowWidth > windowHeight
       ? "LANDSCAPE"
-      : "PORTRAIT"}
-  `;
+      : "PORTRAIT";
 
-  document.body.appendChild(info);
+  // ====================================================
+  // VISUAL VIEWPORT
+  // ====================================================
 
-  console.log(
-    "🔧 DEBUG DEVICE INFO:",
-    {
-      cameraWidth,
-      cameraHeight,
-      cameraAspect,
-      screenWidth,
-      screenHeight,
-      screenAspect,
-      pixelRatio,
-      screenWidthPhysical: window.screen.width,
-      screenHeightPhysical: window.screen.height,
-      orientation:
-        window.innerWidth > window.innerHeight
-          ? "LANDSCAPE"
-          : "PORTRAIT"
-    }
-  );
-}
+  const viewport =
+    window.visualViewport;
 
-// ======================================================
-// DEBUG — DIMENSÕES REAIS DE RENDERIZAÇÃO
-// ======================================================
+  const viewportWidth =
+    viewport
+      ? viewport.width
+      : 0;
 
-function showRenderInfo() {
+  const viewportHeight =
+    viewport
+      ? viewport.height
+      : 0;
 
-  const video = arToolkitSource.domElement;
-  const rendererCanvas = renderer.domElement;
+  const viewportScale =
+    viewport
+      ? viewport.scale
+      : 0;
 
-  const arCanvas =
-    arToolkitContext.arController?.canvas || null;
+  // ====================================================
+  // RENDERER
+  // ====================================================
 
-  const info = document.getElementById(
-    "device-debug"
-  );
-
-  if (!info) {
-    return;
-  }
-
-  const videoWidth = video.videoWidth;
-  const videoHeight = video.videoHeight;
+  const rendererCanvas =
+    renderer.domElement;
 
   const rendererWidth =
     rendererCanvas.width;
@@ -278,159 +319,420 @@ function showRenderInfo() {
   const rendererHeight =
     rendererCanvas.height;
 
+  const rendererAspect =
+    rendererHeight
+      ? rendererWidth / rendererHeight
+      : 0;
+
   const rendererCSSWidth =
     rendererCanvas.clientWidth;
 
   const rendererCSSHeight =
     rendererCanvas.clientHeight;
 
+  const rendererCSSAspect =
+    rendererCSSHeight
+      ? rendererCSSWidth /
+        rendererCSSHeight
+      : 0;
+
+  // ====================================================
+  // AR.JS CANVAS
+  // ====================================================
+
+  const arCanvas =
+    arToolkitContext
+      .arController
+      ?.canvas || null;
+
   const arCanvasWidth =
-    arCanvas ? arCanvas.width : 0;
+    arCanvas
+      ? arCanvas.width
+      : 0;
 
   const arCanvasHeight =
-    arCanvas ? arCanvas.height : 0;
+    arCanvas
+      ? arCanvas.height
+      : 0;
 
   const arCanvasCSSWidth =
-    arCanvas ? arCanvas.clientWidth : 0;
+    arCanvas
+      ? arCanvas.clientWidth
+      : 0;
 
   const arCanvasCSSHeight =
-    arCanvas ? arCanvas.clientHeight : 0;
+    arCanvas
+      ? arCanvas.clientHeight
+      : 0;
+
+  const arCanvasAspect =
+    arCanvasHeight
+      ? arCanvasWidth /
+        arCanvasHeight
+      : 0;
+
+  // ====================================================
+  // VIDEO CSS
+  // ====================================================
 
   const videoCSSWidth =
-    video ? video.clientWidth : 0;
+    video
+      ? video.clientWidth
+      : 0;
 
   const videoCSSHeight =
-    video ? video.clientHeight : 0;
+    video
+      ? video.clientHeight
+      : 0;
 
-  info.innerHTML += `
-    <br>
-    ─────────────────────<br>
+  const videoCSSAspect =
+    videoCSSHeight
+      ? videoCSSWidth /
+        videoCSSHeight
+      : 0;
 
-    🎨 RENDERER<br>
-    Canvas: ${rendererWidth} × ${rendererHeight}<br>
-    CSS: ${rendererCSSWidth} × ${rendererCSSHeight}<br>
-    Aspect: ${
-      rendererHeight
-        ? (rendererWidth / rendererHeight).toFixed(3)
-        : "—"
-    }<br><br>
+  // ====================================================
+  // POSIÇÕES REAIS
+  // ====================================================
 
-    🧠 AR.JS CANVAS<br>
-    Canvas: ${arCanvasWidth} × ${arCanvasHeight}<br>
-    CSS: ${arCanvasCSSWidth} × ${arCanvasCSSHeight}<br>
-    Aspect: ${
-      arCanvasHeight
-        ? (arCanvasWidth / arCanvasHeight).toFixed(3)
-        : "—"
-    }<br><br>
+  const videoRect =
+    video
+      ? video.getBoundingClientRect()
+      : null;
 
-    📺 VIDEO CSS<br>
+  const rendererRect =
+    rendererCanvas
+      ? rendererCanvas.getBoundingClientRect()
+      : null;
+
+  // ====================================================
+  // PAINEL
+  // ====================================================
+
+  debugPanel.innerHTML = `
+
+    <b>🔧 DEBUG WebAR</b><br>
+
+    ─────────────────────────────<br>
+
+    📷 <b>CÂMARA</b><br>
+
+    Resolução:
+    ${cameraWidth} × ${cameraHeight}<br>
+
+    Aspect:
+    ${cameraAspect
+      ? cameraAspect.toFixed(3)
+      : "—"}<br>
+
+    CSS:
     ${videoCSSWidth} × ${videoCSSHeight}<br>
-    Aspect: ${
-      videoCSSHeight
-        ? (videoCSSWidth / videoCSSHeight).toFixed(3)
-        : "—"
-    }
+
+    CSS Aspect:
+    ${videoCSSAspect
+      ? videoCSSAspect.toFixed(3)
+      : "—"}<br>
+
+    ─────────────────────────────<br>
+
+    📱 <b>ECRÃ</b><br>
+
+    Window:
+    ${windowWidth} × ${windowHeight}<br>
+
+    Aspect:
+    ${windowAspect
+      ? windowAspect.toFixed(3)
+      : "—"}<br>
+
+    Screen:
+    ${screenWidth} × ${screenHeight}<br>
+
+    Orientação:
+    ${orientation}<br>
+
+    ─────────────────────────────<br>
+
+    🔍 <b>PIXEL RATIO</b><br>
+
+    ${pixelRatio}<br>
+
+    ─────────────────────────────<br>
+
+    👁️ <b>VISUAL VIEWPORT</b><br>
+
+    ${viewportWidth
+      ? viewportWidth.toFixed(1)
+      : "—"}
+    ×
+    ${viewportHeight
+      ? viewportHeight.toFixed(1)
+      : "—"}<br>
+
+    Scale:
+    ${viewportScale || "—"}<br>
+
+    ─────────────────────────────<br>
+
+    🎨 <b>THREE.JS RENDERER</b><br>
+
+    Canvas:
+    ${rendererWidth} × ${rendererHeight}<br>
+
+    Aspect:
+    ${rendererAspect
+      ? rendererAspect.toFixed(3)
+      : "—"}<br>
+
+    CSS:
+    ${rendererCSSWidth} × ${rendererCSSHeight}<br>
+
+    CSS Aspect:
+    ${rendererCSSAspect
+      ? rendererCSSAspect.toFixed(3)
+      : "—"}<br>
+
+    ─────────────────────────────<br>
+
+    🧠 <b>AR.JS CANVAS</b><br>
+
+    Canvas:
+    ${arCanvasWidth} × ${arCanvasHeight}<br>
+
+    Aspect:
+    ${arCanvasAspect
+      ? arCanvasAspect.toFixed(3)
+      : "—"}<br>
+
+    CSS:
+    ${arCanvasCSSWidth} × ${arCanvasCSSHeight}<br>
+
+    ─────────────────────────────<br>
+
+    📍 <b>POSIÇÃO DOS ELEMENTOS</b><br>
+
+    VIDEO:<br>
+
+    X:
+    ${videoRect
+      ? videoRect.x.toFixed(1)
+      : "—"}
+    <br>
+
+    Y:
+    ${videoRect
+      ? videoRect.y.toFixed(1)
+      : "—"}
+    <br>
+
+    W:
+    ${videoRect
+      ? videoRect.width.toFixed(1)
+      : "—"}
+    <br>
+
+    H:
+    ${videoRect
+      ? videoRect.height.toFixed(1)
+      : "—"}
+    <br><br>
+
+    RENDERER:<br>
+
+    X:
+    ${rendererRect
+      ? rendererRect.x.toFixed(1)
+      : "—"}
+    <br>
+
+    Y:
+    ${rendererRect
+      ? rendererRect.y.toFixed(1)
+      : "—"}
+    <br>
+
+    W:
+    ${rendererRect
+      ? rendererRect.width.toFixed(1)
+      : "—"}
+    <br>
+
+    H:
+    ${rendererRect
+      ? rendererRect.height.toFixed(1)
+      : "—"}
+
   `;
 
+  // ====================================================
+  // CONSOLE
+  // ====================================================
+
   console.log(
-    "========== RENDER DEBUG =========="
+    "========== DEBUG COMPLETO =========="
   );
 
-  console.log({
-    video: {
-      width: videoWidth,
-      height: videoHeight,
-      aspect:
-        videoHeight
-          ? videoWidth / videoHeight
-          : null,
+  console.log(
+    "📷 CÂMARA:",
+    {
+      width: cameraWidth,
+      height: cameraHeight,
+      aspect: cameraAspect,
       cssWidth: videoCSSWidth,
-      cssHeight: videoCSSHeight
-    },
+      cssHeight: videoCSSHeight,
+      cssAspect: videoCSSAspect
+    }
+  );
 
-    renderer: {
-      width: rendererWidth,
-      height: rendererHeight,
-      aspect:
-        rendererHeight
-          ? rendererWidth / rendererHeight
-          : null,
+  console.log(
+    "📱 ECRÃ:",
+    {
+      width: windowWidth,
+      height: windowHeight,
+      aspect: windowAspect,
+      screenWidth,
+      screenHeight,
+      orientation
+    }
+  );
+
+  console.log(
+    "🔍 PIXEL RATIO:",
+    pixelRatio
+  );
+
+  console.log(
+    "👁️ VISUAL VIEWPORT:",
+    {
+      width: viewportWidth,
+      height: viewportHeight,
+      scale: viewportScale
+    }
+  );
+
+  console.log(
+    "🎨 RENDERER:",
+    {
+      canvasWidth: rendererWidth,
+      canvasHeight: rendererHeight,
+      aspect: rendererAspect,
       cssWidth: rendererCSSWidth,
-      cssHeight: rendererCSSHeight
-    },
+      cssHeight: rendererCSSHeight,
+      cssAspect: rendererCSSAspect
+    }
+  );
 
-    arCanvas: {
+  console.log(
+    "🧠 AR.JS CANVAS:",
+    {
       width: arCanvasWidth,
       height: arCanvasHeight,
-      aspect:
-        arCanvasHeight
-          ? arCanvasWidth / arCanvasHeight
-          : null,
+      aspect: arCanvasAspect,
       cssWidth: arCanvasCSSWidth,
       cssHeight: arCanvasCSSHeight
     }
-  });
+  );
 
   console.log(
-    "=================================="
+    "📍 VIDEO RECT:",
+    videoRect
+  );
+
+  console.log(
+    "📍 RENDERER RECT:",
+    rendererRect
+  );
+
+  console.log(
+    "===================================="
   );
 }
 
 // ======================================================
-// AR.JS - CONTEXTO
+// AR.JS — INICIALIZAR CÂMARA
 // ======================================================
 
-const arToolkitContext = new THREEx.ArToolkitContext(
-  {
-    detectionMode: "mono",
-    canvasWidth: 640,
-    canvasHeight: 480,
-  },
-  {
-    sourceWidth: 640,
-    sourceHeight: 480,
+arToolkitSource.init(
+  () => {
+
+    console.log(
+      "📷 Câmara AR.js inicializada"
+    );
+
+    setTimeout(
+      () => {
+
+        onResize();
+
+        updateDebugPanel();
+
+      },
+      1000
+    );
+
   }
 );
 
-arToolkitContext.init(() => {
-  camera.projectionMatrix.copy(
-    arToolkitContext.getProjectionMatrix()
-  );
+// ======================================================
+// AR.JS — INICIALIZAR CONTEXTO
+// ======================================================
 
-  console.log("✅ AR.js Context inicializado");
-});
+arToolkitContext.init(
+  () => {
+
+    camera.projectionMatrix.copy(
+      arToolkitContext
+        .getProjectionMatrix()
+    );
+
+    console.log(
+      "✅ AR.js Context inicializado"
+    );
+
+    updateDebugPanel();
+
+  }
+);
 
 // ======================================================
 // NFT ROOT
 // ======================================================
 
-const markerRoot = new THREE.Group();
+const markerRoot =
+  new THREE.Group();
 
-markerRoot.visible = false;
+markerRoot.visible =
+  false;
 
-scene.add(markerRoot);
+scene.add(
+  markerRoot
+);
 
 // ======================================================
 // TESTE — BOLA VERMELHA
 // ======================================================
 
-const testBallGeometry = new THREE.SphereGeometry(
-  50,
-  32,
-  32
-);
+const testBallGeometry =
+  new THREE.SphereGeometry(
+    50,
+    32,
+    32
+  );
 
-const testBallMaterial = new THREE.MeshBasicMaterial({
-  color: 0xff0000,
-});
+const testBallMaterial =
+  new THREE.MeshBasicMaterial({
+    color: 0xff0000,
+  });
 
-const testBall = new THREE.Mesh(
-  testBallGeometry,
-  testBallMaterial
-);
+const testBall =
+  new THREE.Mesh(
+    testBallGeometry,
+    testBallMaterial
+  );
 
+// ======================================================
 // POSIÇÃO QUE JÁ SABEMOS QUE FUNCIONA
+// ======================================================
 
 testBall.position.set(
   100,
@@ -438,29 +740,40 @@ testBall.position.set(
   -100
 );
 
-markerRoot.add(testBall);
+markerRoot.add(
+  testBall
+);
 
-console.log("🔴 BOLA DE TESTE ADICIONADA");
+console.log(
+  "🔴 BOLA DE TESTE ADICIONADA"
+);
 
 // ======================================================
 // ESTABILIZAÇÃO EXTRA DO TRACKING
 // ======================================================
 
-let lastPosition = new THREE.Vector3();
-let lastQuaternion = new THREE.Quaternion();
+let lastPosition =
+  new THREE.Vector3();
 
-let trackingInitialized = false;
+let lastQuaternion =
+  new THREE.Quaternion();
 
-// Mantemos exatamente os valores da versão atual
+let trackingInitialized =
+  false;
 
-const POSITION_SMOOTHING = 1.0;
-const ROTATION_SMOOTHING = 1.0;
+const POSITION_SMOOTHING =
+  1.0;
+
+const ROTATION_SMOOTHING =
+  1.0;
 
 // ======================================================
 // NFT / IMAGE TRACKING
 // ======================================================
 
-console.log("========== DEBUG PATHS ==========");
+console.log(
+  "========== DEBUG PATHS =========="
+);
 
 console.log(
   "🔥 DESCRIPTORS URL FINAL:",
@@ -491,60 +804,78 @@ console.log(
   ).href
 );
 
-console.log("================================");
+console.log(
+  "================================"
+);
 
 // ======================================================
 // CONTROLOS NFT
 // ======================================================
 
-const markerControls = new THREEx.ArMarkerControls(
-  arToolkitContext,
-  markerRoot,
-  {
-    type: "nft",
+const markerControls =
+  new THREEx.ArMarkerControls(
+    arToolkitContext,
+    markerRoot,
+    {
 
-    descriptorsUrl:
-      "sel-webar-GITHUB/markers/presunto_100_alentejano",
+      type: "nft",
 
-    changeMatrixMode:
-      "modelViewMatrix",
+      descriptorsUrl:
+        "sel-webar-GITHUB/markers/presunto_100_alentejano",
 
-    smooth: true,
-    smoothCount: 30,
-    smoothTolerance: 0.02,
-    smoothThreshold: 10,
-  }
+      changeMatrixMode:
+        "modelViewMatrix",
+
+      smooth: true,
+
+      smoothCount: 30,
+
+      smoothTolerance: 0.02,
+
+      smoothThreshold: 10,
+
+    }
+  );
+
+console.log(
+  "🎯 NFT Marker configurado"
 );
 
-console.log("🎯 NFT Marker configurado");
-
-let markerLostTimeout = null;
+let markerLostTimeout =
+  null;
 
 // ======================================================
-// EVENTO - MARKER ENCONTRADO
+// EVENTO — MARKER ENCONTRADO
 // ======================================================
 
 markerControls.addEventListener(
   "markerFound",
   () => {
 
-    console.log("🔥 MARKER ENCONTRADO");
+    console.log(
+      "🔥 MARKER ENCONTRADO"
+    );
 
-    // Cancelar eventual desaparecimento pendente
+    if (
+      markerLostTimeout !== null
+    ) {
 
-    if (markerLostTimeout !== null) {
+      clearTimeout(
+        markerLostTimeout
+      );
 
-      clearTimeout(markerLostTimeout);
-
-      markerLostTimeout = null;
+      markerLostTimeout =
+        null;
     }
 
-    markerRoot.visible = true;
+    markerRoot.visible =
+      true;
+
   }
 );
 
 // ======================================================
-// EVENTO - MARKER PERDIDO
+// EVENTO — MARKER PERDIDO
 // ======================================================
 
 markerControls.addEventListener(
@@ -555,21 +886,27 @@ markerControls.addEventListener(
       "⚠️ MARKER PERDIDO - A AGUARDAR..."
     );
 
-    // NÃO esconder imediatamente
+    markerLostTimeout =
+      setTimeout(
+        () => {
 
-    markerLostTimeout = setTimeout(() => {
+          console.log(
+            "❌ MARKER PERDIDO DEFINITIVAMENTE"
+          );
 
-      console.log(
-        "❌ MARKER PERDIDO DEFINITIVAMENTE"
+          markerRoot.visible =
+            false;
+
+          trackingInitialized =
+            false;
+
+          markerLostTimeout =
+            null;
+
+        },
+        500
       );
 
-      markerRoot.visible = false;
-
-      trackingInitialized = false;
-
-      markerLostTimeout = null;
-
-    }, 500);
   }
 );
 
@@ -579,31 +916,115 @@ markerControls.addEventListener(
 
 function onResize() {
 
-  if (!arToolkitSource.ready) {
+  if (
+    !arToolkitSource.ready
+  ) {
+
     return;
   }
 
-  arToolkitSource.onResizeElement();
+  arToolkitSource
+    .onResizeElement();
 
-  arToolkitSource.copyElementSizeTo(
-    renderer.domElement
-  );
+  arToolkitSource
+    .copyElementSizeTo(
+      renderer.domElement
+    );
 
   if (
-    arToolkitContext.arController !==
-    null
+    arToolkitContext.arController
+    !== null
   ) {
 
-    arToolkitSource.copyElementSizeTo(
-      arToolkitContext.arController.canvas
-    );
+    arToolkitSource
+      .copyElementSizeTo(
+        arToolkitContext
+          .arController
+          .canvas
+      );
+
   }
+
+  // ----------------------------------------------------
+  // Garantir que o renderer acompanha sempre o viewport
+  // ----------------------------------------------------
+
+  renderer.setPixelRatio(
+    window.devicePixelRatio
+  );
+
+  renderer.setSize(
+    window.innerWidth,
+    window.innerHeight,
+    false
+  );
+
+  // ----------------------------------------------------
+  // Atualizar debug
+  // ----------------------------------------------------
+
+  updateDebugPanel();
+
 }
+
+// ======================================================
+// RESIZE / ORIENTAÇÃO
+// ======================================================
 
 window.addEventListener(
   "resize",
-  onResize
+  () => {
+
+    setTimeout(
+      () => {
+
+        onResize();
+
+      },
+      100
+    );
+
+  }
 );
+
+window.addEventListener(
+  "orientationchange",
+  () => {
+
+    console.log(
+      "🔄 ORIENTAÇÃO ALTERADA"
+    );
+
+    setTimeout(
+      () => {
+
+        onResize();
+
+      },
+      500
+    );
+
+  }
+);
+
+// ======================================================
+// VISUAL VIEWPORT CHANGE
+// ======================================================
+
+if (
+  window.visualViewport
+) {
+
+  window.visualViewport.addEventListener(
+    "resize",
+    () => {
+
+      updateDebugPanel();
+
+    }
+  );
+
+}
 
 // ======================================================
 // NFT CARREGADO
@@ -616,6 +1037,9 @@ window.addEventListener(
     console.log(
       "✅ NFT CARREGADO COM SUCESSO"
     );
+
+    updateDebugPanel();
+
   }
 );
 
@@ -633,7 +1057,9 @@ function animate() {
   // ESPERAR PELA CÂMARA
   // ==================================================
 
-  if (!arToolkitSource.ready) {
+  if (
+    !arToolkitSource.ready
+  ) {
 
     renderer.render(
       scene,
@@ -655,13 +1081,17 @@ function animate() {
   // ESTABILIZAÇÃO EXTRA DO NFT
   // ==================================================
 
-  if (markerRoot.visible) {
+  if (
+    markerRoot.visible
+  ) {
 
     // -----------------------------------------------
     // PRIMEIRA DETEÇÃO
     // -----------------------------------------------
 
-    if (!trackingInitialized) {
+    if (
+      !trackingInitialized
+    ) {
 
       lastPosition.copy(
         markerRoot.position
@@ -671,7 +1101,9 @@ function animate() {
         markerRoot.quaternion
       );
 
-      trackingInitialized = true;
+      trackingInitialized =
+        true;
+
     }
 
     // -----------------------------------------------
@@ -702,7 +1134,9 @@ function animate() {
 
   } else {
 
-    trackingInitialized = false;
+    trackingInitialized =
+      false;
+
   }
 
   // ==================================================
@@ -713,6 +1147,7 @@ function animate() {
     scene,
     camera
   );
+
 }
 
 // ======================================================
