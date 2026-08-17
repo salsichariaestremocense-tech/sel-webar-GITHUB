@@ -122,6 +122,54 @@ arToolkitSource.init(() => {
 });
 
 // ======================================================
+// DEBUG - INFORMAÇÃO DO DISPOSITIVO
+// ======================================================
+
+function showDeviceInfo() {
+
+  const video = arToolkitSource.domElement;
+
+  const info = document.createElement("div");
+
+  info.id = "device-debug";
+
+  info.style.position = "fixed";
+  info.style.top = "10px";
+  info.style.left = "10px";
+  info.style.zIndex = "9999";
+
+  info.style.background = "rgba(0,0,0,0.75)";
+  info.style.color = "#00ff00";
+
+  info.style.padding = "10px";
+  info.style.fontFamily = "monospace";
+  info.style.fontSize = "12px";
+
+  info.style.lineHeight = "1.5";
+
+  info.innerHTML = `
+    📷 CÂMARA<br>
+    Video: ${video.videoWidth} × ${video.videoHeight}<br>
+    Aspect: ${
+      video.videoHeight
+        ? (video.videoWidth / video.videoHeight).toFixed(3)
+        : "—"
+    }<br><br>
+
+    📱 ECRÃ<br>
+    Window: ${window.innerWidth} × ${window.innerHeight}<br>
+    Aspect: ${
+      (window.innerWidth / window.innerHeight).toFixed(3)
+    }<br><br>
+
+    🔍 PIXEL RATIO<br>
+    ${window.devicePixelRatio}
+  `;
+
+  document.body.appendChild(info);
+}
+
+// ======================================================
 // AR.JS - CONTEXTO
 // ======================================================
 
