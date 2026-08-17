@@ -76,6 +76,8 @@ arToolkitSource.init(() => {
 
     onResize();
 
+    showDeviceInfo();
+
     const video = arToolkitSource.domElement;
 
     console.log("========== INFO CÂMARA ==========");
@@ -129,6 +131,15 @@ function showDeviceInfo() {
 
   const video = arToolkitSource.domElement;
 
+  // Remover painel anterior, caso exista
+  const oldInfo = document.getElementById(
+    "device-debug"
+  );
+
+  if (oldInfo) {
+    oldInfo.remove();
+  }
+
   const info = document.createElement("div");
 
   info.id = "device-debug";
@@ -136,37 +147,102 @@ function showDeviceInfo() {
   info.style.position = "fixed";
   info.style.top = "10px";
   info.style.left = "10px";
-  info.style.zIndex = "9999";
 
-  info.style.background = "rgba(0,0,0,0.75)";
-  info.style.color = "#00ff00";
+  info.style.zIndex = "99999";
 
-  info.style.padding = "10px";
-  info.style.fontFamily = "monospace";
-  info.style.fontSize = "12px";
+  info.style.background =
+    "rgba(0,0,0,0.80)";
 
-  info.style.lineHeight = "1.5";
+  info.style.color =
+    "#00ff00";
+
+  info.style.padding =
+    "12px";
+
+  info.style.borderRadius =
+    "8px";
+
+  info.style.fontFamily =
+    "monospace";
+
+  info.style.fontSize =
+    "13px";
+
+  info.style.lineHeight =
+    "1.5";
+
+  info.style.pointerEvents =
+    "none";
+
+  const cameraWidth =
+    video.videoWidth;
+
+  const cameraHeight =
+    video.videoHeight;
+
+  const screenWidth =
+    window.innerWidth;
+
+  const screenHeight =
+    window.innerHeight;
+
+  const cameraAspect =
+    cameraHeight
+      ? cameraWidth / cameraHeight
+      : 0;
+
+  const screenAspect =
+    screenHeight
+      ? screenWidth / screenHeight
+      : 0;
+
+  const pixelRatio =
+    window.devicePixelRatio;
 
   info.innerHTML = `
+    <b>🔧 DEBUG WebAR</b><br>
+    ─────────────────────<br>
+
     📷 CÂMARA<br>
-    Video: ${video.videoWidth} × ${video.videoHeight}<br>
-    Aspect: ${
-      video.videoHeight
-        ? (video.videoWidth / video.videoHeight).toFixed(3)
-        : "—"
-    }<br><br>
+    Resolução: ${cameraWidth} × ${cameraHeight}<br>
+    Aspect: ${cameraAspect.toFixed(3)}<br><br>
 
     📱 ECRÃ<br>
-    Window: ${window.innerWidth} × ${window.innerHeight}<br>
-    Aspect: ${
-      (window.innerWidth / window.innerHeight).toFixed(3)
-    }<br><br>
+    Window: ${screenWidth} × ${screenHeight}<br>
+    Aspect: ${screenAspect.toFixed(3)}<br><br>
 
     🔍 PIXEL RATIO<br>
-    ${window.devicePixelRatio}
+    ${pixelRatio}<br><br>
+
+    🖥️ SCREEN<br>
+    ${window.screen.width} × ${window.screen.height}<br><br>
+
+    🔄 ORIENTAÇÃO<br>
+    ${window.innerWidth > window.innerHeight
+      ? "LANDSCAPE"
+      : "PORTRAIT"}
   `;
 
   document.body.appendChild(info);
+
+  console.log(
+    "🔧 DEBUG DEVICE INFO:",
+    {
+      cameraWidth,
+      cameraHeight,
+      cameraAspect,
+      screenWidth,
+      screenHeight,
+      screenAspect,
+      pixelRatio,
+      screenWidthPhysical: window.screen.width,
+      screenHeightPhysical: window.screen.height,
+      orientation:
+        window.innerWidth > window.innerHeight
+          ? "LANDSCAPE"
+          : "PORTRAIT"
+    }
+  );
 }
 
 // ======================================================
