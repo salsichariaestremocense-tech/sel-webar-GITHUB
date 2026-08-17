@@ -78,6 +78,10 @@ arToolkitSource.init(() => {
 
     showDeviceInfo();
 
+    setTimeout(() => {
+      showRenderInfo();
+    }, 500);
+
     const video = arToolkitSource.domElement;
 
     console.log("========== INFO CÂMARA ==========");
@@ -242,6 +246,134 @@ function showDeviceInfo() {
           ? "LANDSCAPE"
           : "PORTRAIT"
     }
+  );
+}
+
+// ======================================================
+// DEBUG — DIMENSÕES REAIS DE RENDERIZAÇÃO
+// ======================================================
+
+function showRenderInfo() {
+
+  const video = arToolkitSource.domElement;
+  const rendererCanvas = renderer.domElement;
+
+  const arCanvas =
+    arToolkitContext.arController?.canvas || null;
+
+  const info = document.getElementById(
+    "device-debug"
+  );
+
+  if (!info) {
+    return;
+  }
+
+  const videoWidth = video.videoWidth;
+  const videoHeight = video.videoHeight;
+
+  const rendererWidth =
+    rendererCanvas.width;
+
+  const rendererHeight =
+    rendererCanvas.height;
+
+  const rendererCSSWidth =
+    rendererCanvas.clientWidth;
+
+  const rendererCSSHeight =
+    rendererCanvas.clientHeight;
+
+  const arCanvasWidth =
+    arCanvas ? arCanvas.width : 0;
+
+  const arCanvasHeight =
+    arCanvas ? arCanvas.height : 0;
+
+  const arCanvasCSSWidth =
+    arCanvas ? arCanvas.clientWidth : 0;
+
+  const arCanvasCSSHeight =
+    arCanvas ? arCanvas.clientHeight : 0;
+
+  const videoCSSWidth =
+    video ? video.clientWidth : 0;
+
+  const videoCSSHeight =
+    video ? video.clientHeight : 0;
+
+  info.innerHTML += `
+    <br>
+    ─────────────────────<br>
+
+    🎨 RENDERER<br>
+    Canvas: ${rendererWidth} × ${rendererHeight}<br>
+    CSS: ${rendererCSSWidth} × ${rendererCSSHeight}<br>
+    Aspect: ${
+      rendererHeight
+        ? (rendererWidth / rendererHeight).toFixed(3)
+        : "—"
+    }<br><br>
+
+    🧠 AR.JS CANVAS<br>
+    Canvas: ${arCanvasWidth} × ${arCanvasHeight}<br>
+    CSS: ${arCanvasCSSWidth} × ${arCanvasCSSHeight}<br>
+    Aspect: ${
+      arCanvasHeight
+        ? (arCanvasWidth / arCanvasHeight).toFixed(3)
+        : "—"
+    }<br><br>
+
+    📺 VIDEO CSS<br>
+    ${videoCSSWidth} × ${videoCSSHeight}<br>
+    Aspect: ${
+      videoCSSHeight
+        ? (videoCSSWidth / videoCSSHeight).toFixed(3)
+        : "—"
+    }
+  `;
+
+  console.log(
+    "========== RENDER DEBUG =========="
+  );
+
+  console.log({
+    video: {
+      width: videoWidth,
+      height: videoHeight,
+      aspect:
+        videoHeight
+          ? videoWidth / videoHeight
+          : null,
+      cssWidth: videoCSSWidth,
+      cssHeight: videoCSSHeight
+    },
+
+    renderer: {
+      width: rendererWidth,
+      height: rendererHeight,
+      aspect:
+        rendererHeight
+          ? rendererWidth / rendererHeight
+          : null,
+      cssWidth: rendererCSSWidth,
+      cssHeight: rendererCSSHeight
+    },
+
+    arCanvas: {
+      width: arCanvasWidth,
+      height: arCanvasHeight,
+      aspect:
+        arCanvasHeight
+          ? arCanvasWidth / arCanvasHeight
+          : null,
+      cssWidth: arCanvasCSSWidth,
+      cssHeight: arCanvasCSSHeight
+    }
+  });
+
+  console.log(
+    "=================================="
   );
 }
 
