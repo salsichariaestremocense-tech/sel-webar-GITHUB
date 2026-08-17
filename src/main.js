@@ -69,10 +69,55 @@ const arToolkitSource = new THREEx.ArToolkitSource({
 });
 
 arToolkitSource.init(() => {
+
   console.log("📷 Câmara AR.js inicializada");
 
   setTimeout(() => {
+
     onResize();
+
+    const video = arToolkitSource.domElement;
+
+    console.log("========== INFO CÂMARA ==========");
+
+    console.log(
+      "📐 VideoWidth:",
+      video.videoWidth
+    );
+
+    console.log(
+      "📐 VideoHeight:",
+      video.videoHeight
+    );
+
+    console.log(
+      "📱 WindowWidth:",
+      window.innerWidth
+    );
+
+    console.log(
+      "📱 WindowHeight:",
+      window.innerHeight
+    );
+
+    console.log(
+      "📊 DevicePixelRatio:",
+      window.devicePixelRatio
+    );
+
+    console.log(
+      "📐 Aspect Ratio Câmara:",
+      video.videoWidth / video.videoHeight
+    );
+
+    console.log(
+      "📐 Aspect Ratio Ecrã:",
+      window.innerWidth / window.innerHeight
+    );
+
+    console.log(
+      "================================");
+
   }, 1000);
 });
 
