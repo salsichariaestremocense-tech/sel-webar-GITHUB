@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import * as THREEx from "@ar-js-org/ar.js/three.js/build/ar-threex.mjs";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 const BASE_URL = import.meta.env.BASE_URL;
 
@@ -8,10 +9,10 @@ console.log("Three.js carregado =", !!THREE);
 console.log("AR.js carregado =", !!THREEx);
 
 // ======================================================
-// TESTE 1 — NFT TRACKING SEM MODELO 3D
+// TESTE 2 — NFT TRACKING + MODELO 3D
 // ======================================================
 
-console.log("🔴 TESTE 1 ATIVO — SEM GLB");
+console.log("🟢 TESTE 2 ATIVO — NFT + PRESUNTO 3D");
 
 // ======================================================
 // DEBUG GLOBAL
@@ -154,9 +155,6 @@ const arToolkitSource =
 
     sourceType: "webcam",
 
-    // Mantemos resolução de processamento
-    // moderada para melhorar desempenho.
-
     sourceWidth: 640,
     sourceHeight: 480,
 
@@ -263,10 +261,7 @@ function updateRendererViewport() {
     );
 
   // ----------------------------------------------------
-  // Pixel ratio limitado a 2
-  //
-  // Isto evita que dispositivos com DPR 3,
-  // 3.5 ou superior criem um canvas demasiado pesado.
+  // Limitar DPR a 2
   // ----------------------------------------------------
 
   renderer.setPixelRatio(
@@ -274,7 +269,7 @@ function updateRendererViewport() {
   );
 
   // ----------------------------------------------------
-  // Renderer ocupa exatamente o viewport visual
+  // Renderer segue o viewport do dispositivo
   // ----------------------------------------------------
 
   renderer.setSize(
@@ -284,7 +279,7 @@ function updateRendererViewport() {
   );
 
   // ----------------------------------------------------
-  // Garantir que o canvas acompanha o viewport
+  // CSS
   // ----------------------------------------------------
 
   renderer.domElement.style.width =
@@ -475,7 +470,16 @@ function updateDebugPanel() {
 
   debugPanel.innerHTML = `
 
-    <b>🔧 DEBUG WebAR — TESTE 1</b><br>
+    <b>🔧 DEBUG WebAR — TESTE 2</b><br>
+
+    ─────────────────────────────<br>
+
+    🥩 <b>PRESUNTO 3D</b><br>
+
+    Estado:
+    ${presuntoLoaded
+      ? "CARREGADO"
+      : "A CARREGAR..."}<br>
 
     ─────────────────────────────<br>
 
@@ -661,86 +665,6 @@ function updateDebugPanel() {
 
   `;
 
-  // ====================================================
-  // CONSOLE
-  // ====================================================
-
-  console.log(
-    "========== DEBUG COMPLETO =========="
-  );
-
-  console.log(
-    "📷 CÂMARA:",
-    videoInfo
-  );
-
-  console.log(
-    "📱 VIEWPORT:",
-    viewport
-  );
-
-  console.log(
-    "🔍 PIXEL RATIO:",
-    pixelRatio
-  );
-
-  console.log(
-    "🎨 RENDERER:",
-    {
-      canvasWidth:
-        rendererWidth,
-
-      canvasHeight:
-        rendererHeight,
-
-      aspect:
-        rendererAspect,
-
-      cssWidth:
-        rendererCSSWidth,
-
-      cssHeight:
-        rendererCSSHeight,
-
-      cssAspect:
-        rendererCSSAspect,
-    }
-  );
-
-  console.log(
-    "🧠 AR.JS CANVAS:",
-    {
-      width:
-        arCanvasWidth,
-
-      height:
-        arCanvasHeight,
-
-      aspect:
-        arCanvasAspect,
-
-      cssWidth:
-        arCanvasCSSWidth,
-
-      cssHeight:
-        arCanvasCSSHeight,
-    }
-  );
-
-  console.log(
-    "📍 VIDEO RECT:",
-    videoRect
-  );
-
-  console.log(
-    "📍 RENDERER RECT:",
-    rendererRect
-  );
-
-  console.log(
-    "===================================="
-  );
-
 }
 
 // ======================================================
@@ -761,10 +685,7 @@ function onResize() {
     .onResizeElement();
 
   // ----------------------------------------------------
-  // NÃO copiamos o tamanho da câmara diretamente
-  // para o renderer.
-  //
-  // O renderer deve seguir o viewport do dispositivo.
+  // Canvas interno do AR.js
   // ----------------------------------------------------
 
   if (
@@ -787,7 +708,7 @@ function onResize() {
   updateRendererViewport();
 
   // ----------------------------------------------------
-  // Debug
+  // Atualizar debug
   // ----------------------------------------------------
 
   updateDebugPanel();
@@ -853,43 +774,441 @@ scene.add(
 );
 
 // ======================================================
-// TESTE — BOLA VERMELHA
+// PRESUNTO 3D
 // ======================================================
 
-const testBallGeometry =
-  new THREE.SphereGeometry(
-    50,
-    32,
-    32
-  );
+const loader =
+  new GLTFLoader();
 
-const testBallMaterial =
-  new THREE.MeshBasicMaterial({
-    color: 0xff0000,
-  });
+let presuntoLoaded =
+  false;
 
-const testBall =
-  new THREE.Mesh(
-    testBallGeometry,
-    testBallMaterial
-  );
+let presunto =
+  null;
+
+let pivotPresunto =
+  null;
 
 // ======================================================
-// POSIÇÃO DE REFERÊNCIA
+// CARREGAR MODELO GLB
 // ======================================================
 
-testBall.position.set(
-  100,
-  0,
-  -100
-);
-
-markerRoot.add(
-  testBall
-);
+const modelURL =
+  `${BASE_URL}presunto_100_alentejano.glb`;
 
 console.log(
-  "🔴 BOLA DE TESTE ADICIONADA"
+  "🥩 URL DO PRESUNTO:",
+  new URL(
+    modelURL,
+    window.location.href
+  ).href
+);
+
+loader.load(
+
+  modelURL,
+
+  // ====================================================
+  // MODELO CARREGADO
+  // ====================================================
+
+  (gltf) => {
+
+    console.log(
+      "🥩 PRESUNTO 3D CARREGADO"
+    );
+
+    presunto =
+      gltf.scene;
+
+    // ==================================================
+    // GARANTIR VISIBILIDADE DOS MESHES
+    // ==================================================
+
+    let meshCount =
+      0;
+
+    presunto.traverse(
+      (object) => {
+
+        if (!object.isMesh) {
+          return;
+        }
+
+        meshCount++;
+
+        object.visible =
+          true;
+
+        object.frustumCulled =
+          false;
+
+        if (!object.material) {
+          return;
+        }
+
+        const materials =
+          Array.isArray(
+            object.material
+          )
+            ? object.material
+            : [object.material];
+
+        materials.forEach(
+          (material) => {
+
+            console.log(
+              "🎨 MATERIAL ORIGINAL:",
+              {
+                name:
+                  material.name,
+
+                type:
+                  material.type,
+
+                transparent:
+                  material.transparent,
+
+                opacity:
+                  material.opacity,
+
+                alphaTest:
+                  material.alphaTest,
+
+                depthWrite:
+                  material.depthWrite,
+
+                depthTest:
+                  material.depthTest,
+              }
+            );
+
+            // ------------------------------------------------
+            // FACES DOS DOIS LADOS
+            // ------------------------------------------------
+
+            material.side =
+              THREE.DoubleSide;
+
+            // ------------------------------------------------
+            // PRESERVAR TRANSPARÊNCIA
+            // ------------------------------------------------
+
+            if (
+              material.transparent === true
+            ) {
+
+              material.transparent =
+                true;
+
+              material.depthTest =
+                true;
+
+              material.depthWrite =
+                false;
+
+            } else {
+
+              material.transparent =
+                false;
+
+              material.opacity =
+                1.0;
+
+              material.depthTest =
+                true;
+
+              material.depthWrite =
+                true;
+
+            }
+
+            material.needsUpdate =
+              true;
+
+          }
+        );
+
+      }
+    );
+
+    console.log(
+      "🔲 Meshes encontrados:",
+      meshCount
+    );
+
+    // ==================================================
+    // DIMENSÕES ORIGINAIS
+    // ==================================================
+
+    const box =
+      new THREE.Box3()
+        .setFromObject(
+          presunto
+        );
+
+    const size =
+      new THREE.Vector3();
+
+    const center =
+      new THREE.Vector3();
+
+    box.getSize(
+      size
+    );
+
+    box.getCenter(
+      center
+    );
+
+    console.log(
+      "📦 Tamanho original:",
+      size
+    );
+
+    console.log(
+      "📍 Centro original:",
+      center
+    );
+
+    const maxDimension =
+      Math.max(
+        size.x,
+        size.y,
+        size.z
+      );
+
+    console.log(
+      "📏 Dimensão máxima:",
+      maxDimension
+    );
+
+    // ==================================================
+    // PIVOT
+    // ==================================================
+
+    pivotPresunto =
+      new THREE.Group();
+
+    // ==================================================
+    // CENTRAR MODELO
+    // ==================================================
+
+    presunto.position.set(
+      -center.x,
+      -center.y,
+      -center.z
+    );
+
+    // ==================================================
+    // ESCALA
+    // ==================================================
+
+    const targetSize =
+      200.0;
+
+    const modelScale =
+      targetSize /
+      maxDimension;
+
+    presunto.scale.set(
+      modelScale,
+      modelScale,
+      modelScale
+    );
+
+    console.log(
+      "📏 Escala aplicada:",
+      modelScale
+    );
+
+    // ==================================================
+    // ROTAÇÃO
+    // ==================================================
+
+    presunto.rotation.set(
+      0,
+      0,
+      0
+    );
+
+    // ==================================================
+    // ADICIONAR AO PIVOT
+    // ==================================================
+
+    pivotPresunto.add(
+      presunto
+    );
+
+    // ==================================================
+    // POSIÇÃO DO PIVOT
+    // ==================================================
+
+    // Exatamente a mesma referência
+    // que utilizávamos na bola vermelha.
+
+    pivotPresunto.position.set(
+      100,
+      0,
+      -100
+    );
+
+    // ==================================================
+    // ROTAÇÃO DO PIVOT
+    // ==================================================
+
+    pivotPresunto.rotation.set(
+      0,
+      0,
+      0
+    );
+
+    // ==================================================
+    // ESCALA DO PIVOT
+    // ==================================================
+
+    pivotPresunto.scale.set(
+      1,
+      1,
+      1
+    );
+
+    // ==================================================
+    // COLOCAR MODELO NO PLANO
+    // ==================================================
+
+    presunto.updateMatrixWorld(
+      true
+    );
+
+    const groundBox =
+      new THREE.Box3()
+        .setFromObject(
+          presunto
+        );
+
+    const currentBottom =
+      groundBox.min.y;
+
+    presunto.position.y -=
+      currentBottom;
+
+    presunto.updateMatrixWorld(
+      true
+    );
+
+    // ==================================================
+    // VERIFICAÇÃO FINAL
+    // ==================================================
+
+    const finalBox =
+      new THREE.Box3()
+        .setFromObject(
+          presunto
+        );
+
+    console.log(
+      "📦 Bounding box final:",
+      finalBox
+    );
+
+    console.log(
+      "📏 Altura final:",
+      finalBox.max.y -
+      finalBox.min.y
+    );
+
+    console.log(
+      "📍 Posição final:",
+      presunto.position
+    );
+
+    // ==================================================
+    // VISIBILIDADE
+    // ==================================================
+
+    presunto.visible =
+      true;
+
+    pivotPresunto.visible =
+      true;
+
+    // ==================================================
+    // ADICIONAR AO NFT
+    // ==================================================
+
+    markerRoot.add(
+      pivotPresunto
+    );
+
+    // ==================================================
+    // ESTADO
+    // ==================================================
+
+    presuntoLoaded =
+      true;
+
+    updateDebugPanel();
+
+    console.log(
+      "🥩 PRESUNTO ADICIONADO AO NFT"
+    );
+
+    console.log(
+      "📍 Pivot:",
+      pivotPresunto.position
+    );
+
+    console.log(
+      "📏 Escala:",
+      presunto.scale
+    );
+
+  },
+
+  // ====================================================
+  // PROGRESSO
+  // ====================================================
+
+  (progress) => {
+
+    if (
+      progress.total > 0
+    ) {
+
+      const percent =
+        (
+          progress.loaded /
+          progress.total
+        ) *
+        100;
+
+      console.log(
+        `📥 Carregando presunto: ${percent.toFixed(0)}%`
+      );
+
+    }
+
+  },
+
+  // ====================================================
+  // ERRO
+  // ====================================================
+
+  (error) => {
+
+    console.error(
+      "❌ ERRO AO CARREGAR O PRESUNTO 3D:",
+      error
+    );
+
+    presuntoLoaded =
+      false;
+
+    updateDebugPanel();
+
+  }
+
 );
 
 // ======================================================
@@ -1113,6 +1432,7 @@ if (
         () => {
 
           updateRendererViewport();
+
           updateDebugPanel();
 
         },
@@ -1256,5 +1576,5 @@ function animate() {
 animate();
 
 console.log(
-  "🚀 TESTE 1 INICIADO — NFT + BOLA VERMELHA"
+  "🚀 TESTE 2 INICIADO — NFT + PRESUNTO 3D"
 );
