@@ -4,7 +4,6 @@ import * as THREEx from "@ar-js-org/ar.js/three.js/build/ar-threex.mjs";
 const BASE_URL = import.meta.env.BASE_URL;
 
 console.log("📁 Base URL:", BASE_URL);
-
 console.log("Three.js carregado =", !!THREE);
 console.log("AR.js carregado =", !!THREEx);
 
@@ -21,6 +20,25 @@ console.log("🔴 TESTE 1 ATIVO — SEM GLB");
 let debugPanel = null;
 
 // ======================================================
+// BODY / LAYOUT GLOBAL
+// ======================================================
+
+document.documentElement.style.margin = "0";
+document.documentElement.style.padding = "0";
+document.documentElement.style.width = "100%";
+document.documentElement.style.height = "100%";
+document.documentElement.style.overflow = "hidden";
+
+document.body.style.margin = "0";
+document.body.style.padding = "0";
+document.body.style.width = "100%";
+document.body.style.height = "100%";
+document.body.style.overflow = "hidden";
+document.body.style.position = "fixed";
+document.body.style.top = "0";
+document.body.style.left = "0";
+
+// ======================================================
 // RENDERER
 // ======================================================
 
@@ -30,24 +48,42 @@ const renderer = new THREE.WebGLRenderer({
   logarithmicDepthBuffer: true,
 });
 
-renderer.setPixelRatio(window.devicePixelRatio);
-renderer.setSize(
-  window.innerWidth,
-  window.innerHeight
+// ======================================================
+// PIXEL RATIO
+// ======================================================
+
+renderer.setPixelRatio(
+  window.devicePixelRatio || 1
 );
 
-renderer.setClearColor(0x000000, 0);
+// ======================================================
+// TAMANHO INICIAL
+// ======================================================
+
+renderer.setSize(
+  window.innerWidth,
+  window.innerHeight,
+  false
+);
+
+renderer.setClearColor(
+  0x000000,
+  0
+);
 
 // ======================================================
 // CSS DO RENDERER
 // ======================================================
 
 renderer.domElement.style.position = "fixed";
+
 renderer.domElement.style.top = "0";
 renderer.domElement.style.left = "0";
+renderer.domElement.style.right = "0";
+renderer.domElement.style.bottom = "0";
 
-renderer.domElement.style.width = "100vw";
-renderer.domElement.style.height = "100vh";
+renderer.domElement.style.width = "100%";
+renderer.domElement.style.height = "100%";
 
 renderer.domElement.style.zIndex = "1";
 
@@ -77,10 +113,16 @@ scene.add(camera);
 
 function createDebugPanel() {
 
-  // Se já existir, não criar outro
-  if (document.getElementById("device-debug")) {
+  if (
+    document.getElementById(
+      "device-debug"
+    )
+  ) {
+
     debugPanel =
-      document.getElementById("device-debug");
+      document.getElementById(
+        "device-debug"
+      );
 
     return;
   }
@@ -95,18 +137,24 @@ function createDebugPanel() {
   // POSIÇÃO
   // ----------------------------------------------------
 
-  debugPanel.style.position = "fixed";
+  debugPanel.style.position =
+    "fixed";
 
-  debugPanel.style.top = "10px";
-  debugPanel.style.left = "10px";
+  debugPanel.style.top =
+    "10px";
 
-  debugPanel.style.right = "10px";
+  debugPanel.style.left =
+    "10px";
+
+  debugPanel.style.right =
+    "10px";
 
   // ----------------------------------------------------
   // APARÊNCIA
   // ----------------------------------------------------
 
-  debugPanel.style.zIndex = "2147483647";
+  debugPanel.style.zIndex =
+    "2147483647";
 
   debugPanel.style.background =
     "rgba(0, 0, 0, 0.88)";
@@ -178,7 +226,7 @@ function createDebugPanel() {
 createDebugPanel();
 
 // ======================================================
-// AR.JS - CÂMARA
+// AR.JS — CÂMARA
 // ======================================================
 
 const arToolkitSource =
@@ -193,7 +241,7 @@ const arToolkitSource =
   });
 
 // ======================================================
-// AR.JS - CONTEXTO
+// AR.JS — CONTEXTO
 // ======================================================
 
 const arToolkitContext =
@@ -321,7 +369,8 @@ function updateDebugPanel() {
 
   const rendererAspect =
     rendererHeight
-      ? rendererWidth / rendererHeight
+      ? rendererWidth /
+        rendererHeight
       : 0;
 
   const rendererCSSWidth =
@@ -421,17 +470,21 @@ function updateDebugPanel() {
     ${cameraWidth} × ${cameraHeight}<br>
 
     Aspect:
-    ${cameraAspect
-      ? cameraAspect.toFixed(3)
-      : "—"}<br>
+    ${
+      cameraAspect
+        ? cameraAspect.toFixed(3)
+        : "—"
+    }<br>
 
     CSS:
     ${videoCSSWidth} × ${videoCSSHeight}<br>
 
     CSS Aspect:
-    ${videoCSSAspect
-      ? videoCSSAspect.toFixed(3)
-      : "—"}<br>
+    ${
+      videoCSSAspect
+        ? videoCSSAspect.toFixed(3)
+        : "—"
+    }<br>
 
     ─────────────────────────────<br>
 
@@ -441,9 +494,11 @@ function updateDebugPanel() {
     ${windowWidth} × ${windowHeight}<br>
 
     Aspect:
-    ${windowAspect
-      ? windowAspect.toFixed(3)
-      : "—"}<br>
+    ${
+      windowAspect
+        ? windowAspect.toFixed(3)
+        : "—"
+    }<br>
 
     Screen:
     ${screenWidth} × ${screenHeight}<br>
@@ -461,16 +516,22 @@ function updateDebugPanel() {
 
     👁️ <b>VISUAL VIEWPORT</b><br>
 
-    ${viewportWidth
-      ? viewportWidth.toFixed(1)
-      : "—"}
+    ${
+      viewportWidth
+        ? viewportWidth.toFixed(1)
+        : "—"
+    }
     ×
-    ${viewportHeight
-      ? viewportHeight.toFixed(1)
-      : "—"}<br>
+    ${
+      viewportHeight
+        ? viewportHeight.toFixed(1)
+        : "—"
+    }<br>
 
     Scale:
-    ${viewportScale || "—"}<br>
+    ${
+      viewportScale || "—"
+    }<br>
 
     ─────────────────────────────<br>
 
@@ -480,17 +541,21 @@ function updateDebugPanel() {
     ${rendererWidth} × ${rendererHeight}<br>
 
     Aspect:
-    ${rendererAspect
-      ? rendererAspect.toFixed(3)
-      : "—"}<br>
+    ${
+      rendererAspect
+        ? rendererAspect.toFixed(3)
+        : "—"
+    }<br>
 
     CSS:
     ${rendererCSSWidth} × ${rendererCSSHeight}<br>
 
     CSS Aspect:
-    ${rendererCSSAspect
-      ? rendererCSSAspect.toFixed(3)
-      : "—"}<br>
+    ${
+      rendererCSSAspect
+        ? rendererCSSAspect.toFixed(3)
+        : "—"
+    }<br>
 
     ─────────────────────────────<br>
 
@@ -500,9 +565,11 @@ function updateDebugPanel() {
     ${arCanvasWidth} × ${arCanvasHeight}<br>
 
     Aspect:
-    ${arCanvasAspect
-      ? arCanvasAspect.toFixed(3)
-      : "—"}<br>
+    ${
+      arCanvasAspect
+        ? arCanvasAspect.toFixed(3)
+        : "—"
+    }<br>
 
     CSS:
     ${arCanvasCSSWidth} × ${arCanvasCSSHeight}<br>
@@ -514,53 +581,69 @@ function updateDebugPanel() {
     VIDEO:<br>
 
     X:
-    ${videoRect
-      ? videoRect.x.toFixed(1)
-      : "—"}
+    ${
+      videoRect
+        ? videoRect.x.toFixed(1)
+        : "—"
+    }
     <br>
 
     Y:
-    ${videoRect
-      ? videoRect.y.toFixed(1)
-      : "—"}
+    ${
+      videoRect
+        ? videoRect.y.toFixed(1)
+        : "—"
+    }
     <br>
 
     W:
-    ${videoRect
-      ? videoRect.width.toFixed(1)
-      : "—"}
+    ${
+      videoRect
+        ? videoRect.width.toFixed(1)
+        : "—"
+    }
     <br>
 
     H:
-    ${videoRect
-      ? videoRect.height.toFixed(1)
-      : "—"}
+    ${
+      videoRect
+        ? videoRect.height.toFixed(1)
+        : "—"
+    }
     <br><br>
 
     RENDERER:<br>
 
     X:
-    ${rendererRect
-      ? rendererRect.x.toFixed(1)
-      : "—"}
+    ${
+      rendererRect
+        ? rendererRect.x.toFixed(1)
+        : "—"
+    }
     <br>
 
     Y:
-    ${rendererRect
-      ? rendererRect.y.toFixed(1)
-      : "—"}
+    ${
+      rendererRect
+        ? rendererRect.y.toFixed(1)
+        : "—"
+    }
     <br>
 
     W:
-    ${rendererRect
-      ? rendererRect.width.toFixed(1)
-      : "—"}
+    ${
+      rendererRect
+        ? rendererRect.width.toFixed(1)
+        : "—"
+    }
     <br>
 
     H:
-    ${rendererRect
-      ? rendererRect.height.toFixed(1)
-      : "—"}
+    ${
+      rendererRect
+        ? rendererRect.height.toFixed(1)
+        : "—"
+    }
 
   `;
 
@@ -923,13 +1006,29 @@ function onResize() {
     return;
   }
 
+  // ====================================================
+  // AR.JS — DIMENSIONAR A CÂMARA
+  // ====================================================
+
   arToolkitSource
     .onResizeElement();
 
-  arToolkitSource
-    .copyElementSizeTo(
-      renderer.domElement
-    );
+  // ====================================================
+  // IMPORTANTE:
+  //
+  // NÃO fazemos:
+  //
+  // arToolkitSource.copyElementSizeTo(
+  //   renderer.domElement
+  // );
+  //
+  // porque isso estava a transformar o CSS
+  // do renderer em 4:3.
+  // ====================================================
+
+  // ====================================================
+  // AR.JS CANVAS
+  // ====================================================
 
   if (
     arToolkitContext.arController
@@ -945,23 +1044,75 @@ function onResize() {
 
   }
 
-  // ----------------------------------------------------
-  // Garantir que o renderer acompanha sempre o viewport
-  // ----------------------------------------------------
+  // ====================================================
+  // THREE.JS — VIEWPORT REAL
+  // ====================================================
+
+  const viewport =
+    window.visualViewport;
+
+  const width =
+    viewport
+      ? viewport.width
+      : window.innerWidth;
+
+  const height =
+    viewport
+      ? viewport.height
+      : window.innerHeight;
+
+  // ====================================================
+  // PIXEL RATIO
+  // ====================================================
 
   renderer.setPixelRatio(
-    window.devicePixelRatio
+    window.devicePixelRatio || 1
   );
 
+  // ====================================================
+  // TAMANHO INTERNO DO CANVAS
+  // ====================================================
+
   renderer.setSize(
-    window.innerWidth,
-    window.innerHeight,
+    width,
+    height,
     false
   );
 
-  // ----------------------------------------------------
-  // Atualizar debug
-  // ----------------------------------------------------
+  // ====================================================
+  // CSS — FORÇAR VIEWPORT
+  // ====================================================
+
+  renderer.domElement.style.position =
+    "fixed";
+
+  renderer.domElement.style.top =
+    "0";
+
+  renderer.domElement.style.left =
+    "0";
+
+  renderer.domElement.style.right =
+    "0";
+
+  renderer.domElement.style.bottom =
+    "0";
+
+  renderer.domElement.style.width =
+    "100%";
+
+  renderer.domElement.style.height =
+    "100%";
+
+  renderer.domElement.style.zIndex =
+    "1";
+
+  renderer.domElement.style.pointerEvents =
+    "none";
+
+  // ====================================================
+  // DEBUG
+  // ====================================================
 
   updateDebugPanel();
 
@@ -1019,7 +1170,14 @@ if (
     "resize",
     () => {
 
-      updateDebugPanel();
+      setTimeout(
+        () => {
+
+          onResize();
+
+        },
+        50
+      );
 
     }
   );
