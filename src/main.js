@@ -147,16 +147,59 @@ function createDebugPanel() {
 createDebugPanel();
 
 // ======================================================
+// FUNÇÃO — DIMENSÕES DA ORIENTAÇÃO AR
+// ======================================================
+//
+// IMPORTANTE:
+// O AR.js trabalha melhor quando as dimensões da fonte
+// acompanham a orientação do dispositivo.
+//
+// Landscape  → 640 × 480
+// Portrait   → 480 × 640
+//
+// Isto evita uma diferença de proporção entre a imagem
+// analisada pelo AR.js e a imagem apresentada no ecrã.
+// ======================================================
+
+function getARSourceDimensions() {
+
+  const isPortrait =
+    window.innerHeight >
+    window.innerWidth;
+
+  if (isPortrait) {
+
+    return {
+      width: 480,
+      height: 640,
+    };
+
+  }
+
+  return {
+    width: 640,
+    height: 480,
+  };
+
+}
+
+// ======================================================
 // AR.JS — CÂMARA
 // ======================================================
+
+const arSourceDimensions =
+  getARSourceDimensions();
 
 const arToolkitSource =
   new THREEx.ArToolkitSource({
 
     sourceType: "webcam",
 
-    sourceWidth: 640,
-    sourceHeight: 480,
+    sourceWidth:
+      arSourceDimensions.width,
+
+    sourceHeight:
+      arSourceDimensions.height,
 
   });
 
@@ -170,14 +213,20 @@ const arToolkitContext =
     {
       detectionMode: "mono",
 
-      canvasWidth: 640,
-      canvasHeight: 480,
+      canvasWidth:
+        arSourceDimensions.width,
+
+      canvasHeight:
+        arSourceDimensions.height,
 
     },
 
     {
-      sourceWidth: 640,
-      sourceHeight: 480,
+      sourceWidth:
+        arSourceDimensions.width,
+
+      sourceHeight:
+        arSourceDimensions.height,
     }
 
   );
@@ -246,6 +295,47 @@ function getVideoInfo() {
 }
 
 // ======================================================
+// FUNÇÃO — DIMENSÕES DO CANVAS AR.JS
+// ======================================================
+
+function getARCanvasInfo() {
+
+  const arCanvas =
+    arToolkitContext
+      .arController
+      ?.canvas || null;
+
+  if (!arCanvas) {
+
+    return {
+      width: 0,
+      height: 0,
+      aspect: 0,
+    };
+
+  }
+
+  const width =
+    arCanvas.width || 0;
+
+  const height =
+    arCanvas.height || 0;
+
+  return {
+
+    width,
+    height,
+
+    aspect:
+      height > 0
+        ? width / height
+        : 0,
+
+  };
+
+}
+
+// ======================================================
 // FUNÇÃO — AJUSTAR RENDERER
 // ======================================================
 
@@ -269,7 +359,7 @@ function updateRendererViewport() {
   );
 
   // ----------------------------------------------------
-  // Renderer segue o viewport do dispositivo
+  // Renderer segue o viewport visual
   // ----------------------------------------------------
 
   renderer.setSize(
@@ -291,9 +381,15 @@ function updateRendererViewport() {
   console.log(
     "🎨 Renderer atualizado:",
     {
-      width: viewport.width,
-      height: viewport.height,
-      aspect: viewport.aspect,
+      width:
+        viewport.width,
+
+      height:
+        viewport.height,
+
+      aspect:
+        viewport.aspect,
+
       pixelRatio,
     }
   );
@@ -318,6 +414,9 @@ function updateDebugPanel() {
 
   const viewport =
     getViewportInfo();
+
+  const arCanvasInfo =
+    getARCanvasInfo();
 
   const pixelRatio =
     window.devicePixelRatio || 1;
@@ -396,41 +495,6 @@ function updateDebugPanel() {
       : 0;
 
   // ====================================================
-  // AR.JS CANVAS
-  // ====================================================
-
-  const arCanvas =
-    arToolkitContext
-      .arController
-      ?.canvas || null;
-
-  const arCanvasWidth =
-    arCanvas
-      ? arCanvas.width
-      : 0;
-
-  const arCanvasHeight =
-    arCanvas
-      ? arCanvas.height
-      : 0;
-
-  const arCanvasCSSWidth =
-    arCanvas
-      ? arCanvas.clientWidth
-      : 0;
-
-  const arCanvasCSSHeight =
-    arCanvas
-      ? arCanvas.clientHeight
-      : 0;
-
-  const arCanvasAspect =
-    arCanvasHeight
-      ? arCanvasWidth /
-        arCanvasHeight
-      : 0;
-
-  // ====================================================
   // VIDEO CSS
   // ====================================================
 
@@ -483,10 +547,24 @@ function updateDebugPanel() {
 
     ─────────────────────────────<br>
 
+    📐 <b>AR SOURCE</b><br>
+
+    Configurado:
+    ${arSourceDimensions.width}
+    ×
+    ${arSourceDimensions.height}<br>
+
+    Orientação:
+    ${orientation}<br>
+
+    ─────────────────────────────<br>
+
     📷 <b>CÂMARA</b><br>
 
     Resolução:
-    ${videoInfo.width} × ${videoInfo.height}<br>
+    ${videoInfo.width}
+    ×
+    ${videoInfo.height}<br>
 
     Aspect:
     ${
@@ -496,7 +574,9 @@ function updateDebugPanel() {
     }<br>
 
     CSS:
-    ${videoCSSWidth} × ${videoCSSHeight}<br>
+    ${videoCSSWidth}
+    ×
+    ${videoCSSHeight}<br>
 
     CSS Aspect:
     ${
@@ -510,7 +590,9 @@ function updateDebugPanel() {
     📱 <b>ECRÃ</b><br>
 
     Window:
-    ${viewport.width} × ${viewport.height}<br>
+    ${viewport.width}
+    ×
+    ${viewport.height}<br>
 
     Aspect:
     ${
@@ -520,7 +602,9 @@ function updateDebugPanel() {
     }<br>
 
     Screen:
-    ${screenWidth} × ${screenHeight}<br>
+    ${screenWidth}
+    ×
+    ${screenHeight}<br>
 
     Orientação:
     ${orientation}<br>
@@ -563,7 +647,9 @@ function updateDebugPanel() {
     🎨 <b>THREE.JS RENDERER</b><br>
 
     Canvas:
-    ${rendererWidth} × ${rendererHeight}<br>
+    ${rendererWidth}
+    ×
+    ${rendererHeight}<br>
 
     Aspect:
     ${
@@ -573,7 +659,9 @@ function updateDebugPanel() {
     }<br>
 
     CSS:
-    ${rendererCSSWidth} × ${rendererCSSHeight}<br>
+    ${rendererCSSWidth}
+    ×
+    ${rendererCSSHeight}<br>
 
     CSS Aspect:
     ${
@@ -587,17 +675,16 @@ function updateDebugPanel() {
     🧠 <b>AR.JS CANVAS</b><br>
 
     Canvas:
-    ${arCanvasWidth} × ${arCanvasHeight}<br>
+    ${arCanvasInfo.width}
+    ×
+    ${arCanvasInfo.height}<br>
 
     Aspect:
     ${
-      arCanvasAspect
-        ? arCanvasAspect.toFixed(3)
+      arCanvasInfo.aspect
+        ? arCanvasInfo.aspect.toFixed(3)
         : "—"
     }<br>
-
-    CSS:
-    ${arCanvasCSSWidth} × ${arCanvasCSSHeight}<br>
 
     ─────────────────────────────<br>
 
@@ -971,6 +1058,16 @@ loader.load(
       center
     );
 
+    // ==================================================
+    // IMPORTANTE
+    //
+    // Escala UNIFORME.
+    //
+    // Não usamos escalas diferentes em X/Y/Z.
+    // Isto garante que o código nunca achata
+    // deliberadamente o modelo.
+    // ==================================================
+
     const maxDimension =
       Math.max(
         size.x,
@@ -1001,7 +1098,7 @@ loader.load(
     );
 
     // ==================================================
-    // ESCALA
+    // ESCALA UNIFORME
     // ==================================================
 
     const targetSize =
@@ -1011,15 +1108,24 @@ loader.load(
       targetSize /
       maxDimension;
 
-    presunto.scale.set(
-      modelScale,
-      modelScale,
+    // --------------------------------------------------
+    // IMPORTANTE:
+    //
+    // A MESMA escala nos 3 eixos.
+    // --------------------------------------------------
+
+    presunto.scale.setScalar(
       modelScale
     );
 
     console.log(
-      "📏 Escala aplicada:",
+      "📏 Escala uniforme aplicada:",
       modelScale
+    );
+
+    console.log(
+      "📏 Escala final:",
+      presunto.scale
     );
 
     // ==================================================
@@ -1043,9 +1149,6 @@ loader.load(
     // ==================================================
     // POSIÇÃO DO PIVOT
     // ==================================================
-
-    // Exatamente a mesma referência
-    // que utilizávamos na bola vermelha.
 
     pivotPresunto.position.set(
       100,
@@ -1107,15 +1210,51 @@ loader.load(
           presunto
         );
 
+    const finalWidth =
+      finalBox.max.x -
+      finalBox.min.x;
+
+    const finalHeight =
+      finalBox.max.y -
+      finalBox.min.y;
+
+    const finalDepth =
+      finalBox.max.z -
+      finalBox.min.z;
+
     console.log(
       "📦 Bounding box final:",
       finalBox
     );
 
     console.log(
-      "📏 Altura final:",
-      finalBox.max.y -
-      finalBox.min.y
+      "📐 DIMENSÕES FINAIS DO PRESUNTO:",
+      {
+        width:
+          finalWidth,
+
+        height:
+          finalHeight,
+
+        depth:
+          finalDepth,
+      }
+    );
+
+    console.log(
+      "📊 RÁCIO X/Y:",
+      finalHeight !== 0
+        ? finalWidth /
+          finalHeight
+        : 0
+    );
+
+    console.log(
+      "📊 RÁCIO Z/Y:",
+      finalHeight !== 0
+        ? finalDepth /
+          finalHeight
+        : 0
     );
 
     console.log(
